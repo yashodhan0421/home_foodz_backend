@@ -1,6 +1,7 @@
 import express from 'express';
 import * as routes from './apis/routes';
 import cors from 'cors';
+import { default as mongoConnection } from './connection/mongoConnect';
 
 const app = express();
 const port = 3000;
@@ -12,6 +13,9 @@ app.use(
   })
 );
 app.use(express.json());
+
+// intializing database
+mongoConnection();
 
 // home route
 app.get('/', (req, res) => {

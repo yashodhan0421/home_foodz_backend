@@ -2,14 +2,7 @@ import googleLibPhone from 'google-libphonenumber';
 const phoneUtil = googleLibPhone.PhoneNumberUtil.getInstance();
 import { authService } from '../services';
 
-type authController = {
-  signUp: any;
-  signIn: any;
-};
-
-const controller: authController = { signIn: null, signUp: null };
-
-controller.signUp = async (req, res, next) => {
+export const signUp = async (req, res, next) => {
   const body = req.body;
   if (!body?.name) res.json({ status: 'failed', message: 'name is required' });
   else if (!body?.username)
@@ -22,6 +15,8 @@ controller.signUp = async (req, res, next) => {
     res.json({ status: 'failed', message: 'phone is required' });
   else if (!body?.country)
     res.json({ status: 'failed', message: 'country is required' });
+  else if (!body?.type)
+    res.json({ status: 'failed', message: 'type is required' });
 
   try {
     const isValidPhone = phoneUtil.isValidNumberForRegion(
@@ -36,17 +31,24 @@ controller.signUp = async (req, res, next) => {
     res.json({ status: 'failed', message: 'invalid phone number' });
   }
 
-  if (!(await authService.getUser(body.username))) {
+  if (!(await authService.getUser({ username: body.username }))) {
     res.json({ status: 'failed', message: 'username already exists' });
   }
-  if (!(await authService.getUser(body.email))) {
+  if (!(await authService.getUser({ email: body.email }))) {
     res.json({ status: 'failed', message: 'email already exists' });
   }
-  await authService.registerUser(body);
+  try {
+    await authService.registerUser(body);
+  } catch (e) {
+    res.json({ status: 'failed', message: e });
+  }
   await authService.sendEmailOtp(body.email);
   res.json({ status: 'success', message: 'successfully Registered' });
 };
 
-controller.signIn = async (req, res) => {};
+export const signIn = async (req, res) => {};
 
-export default controller;
+export const getAllUsers = async (req, res) => {
+  const users = await authService.getUsers();
+  res.json({ status: 'success', data: users });
+};
