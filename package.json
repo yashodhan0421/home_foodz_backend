@@ -20,6 +20,8 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "google-libphonenumber": "^3.2.15",
-    "mongoose": "^5.11.8"
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.11.8",
+    "nodemailer": "^6.4.17"
   }
 }

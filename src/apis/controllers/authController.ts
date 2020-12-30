@@ -19,7 +19,7 @@ export const signUp = async (req, res, next) => {
     res.json({ status: 'failed', message: 'type is required' });
 
   try {
-    const isValidPhone = phoneUtil.isValidNumberForRegion(
+    const isValidPhone = await phoneUtil.isValidNumberForRegion(
       phoneUtil.parse(body.phone, body.country),
       body.country
     );
@@ -38,15 +38,63 @@ export const signUp = async (req, res, next) => {
     res.json({ status: 'failed', message: 'email already exists' });
   }
   try {
-    await authService.registerUser(body);
+    const user = await authService.registerUser(body);
+    await authService.sendEmailOtp(body);
+    res.json({ status: 'success', message: 'successfully Registered', user });
   } catch (e) {
     res.json({ status: 'failed', message: e });
   }
-  await authService.sendEmailOtp(body.email);
-  res.json({ status: 'success', message: 'successfully Registered' });
 };
 
-export const signIn = async (req, res) => {};
+export const signIn = async (req, res) => {
+  const regex = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  const loginType: any = {};
+  const isEmail = regex.test(req.body.username);
+  if (isEmail) {
+    loginType.email = req.body.username;
+  } else {
+    loginType.username = req.body.username;
+  }
+  const password = req.body.password;
+  const response = await authService.signIn(loginType, password);
+  res.json(response);
+};
+
+export const resendOtp = async (req, res) => {
+  const userId = req.body.user_id;
+  const user = await authService.getUser({ _id: userId });
+  try {
+    await authService.sendEmailOtp(user);
+    res.json({
+      status: 'success',
+      message: 'Otp has been sent to registered email'
+    });
+  } catch (e) {
+    res.json({
+      status: 'failed',
+      message: 'failed to resend Otp. Try After Sometime'
+    });
+  }
+};
+
+export const verifyOtp = async (req, res) => {
+  const payload = {
+    userId: req.body.user_id,
+    otp: req.body.otp
+  };
+  const isVerified = await authService.verifyOtp(payload);
+  if (isVerified) {
+    res.json({
+      status: 'success',
+      message: 'Otp verified successfully'
+    });
+  } else {
+    res.json({
+      status: 'failed',
+      message: 'Incorrect Otp'
+    });
+  }
+};
 
 export const getAllUsers = async (req, res) => {
   const users = await authService.getUsers();
