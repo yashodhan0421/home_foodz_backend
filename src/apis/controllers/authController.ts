@@ -31,15 +31,15 @@ export const signUp = async (req, res, next) => {
     res.json({ status: 'failed', message: 'invalid phone number' });
   }
 
-  if (!(await authService.getUser({ username: body.username }))) {
+  if (await authService.getUser({ username: body.username })) {
     res.json({ status: 'failed', message: 'username already exists' });
   }
-  if (!(await authService.getUser({ email: body.email }))) {
+  if (await authService.getUser({ email: body.email })) {
     res.json({ status: 'failed', message: 'email already exists' });
   }
   try {
     const user = await authService.registerUser(body);
-    await authService.sendEmailOtp(body);
+    await authService.sendEmailOtp({ ...body, ...user });
     res.json({ status: 'success', message: 'successfully Registered', user });
   } catch (e) {
     res.json({ status: 'failed', message: e });
